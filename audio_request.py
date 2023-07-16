@@ -4,6 +4,10 @@ import argparse
 import json
 import os
 import sys
+from gtts import gTTS
+from langdetect import detect
+from tempfile import TemporaryFile
+import pygame
 
 def get_voice_command(r, source, retries=3):
     for _ in range(retries):
@@ -75,6 +79,19 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=50, retries
     print(f"Failed to get chat completion after {retries} attempts")
     return None
 
+def speak(text):
+    detected_language = detect(text)
+    tts = gTTS(text=text, lang=detected_language)
+    tts.save('temp.mp3')
+
+    pygame.mixer.init()
+    pygame.mixer.music.load('temp.mp3')
+    pygame.mixer.music.play()
+
+    while pygame.mixer.music.get_busy():
+        continue
+
+    pygame.mixer.music.stop()
 
 def main(api_key_file, model, max_tokens):
     r = sr.Recognizer()
@@ -82,6 +99,7 @@ def main(api_key_file, model, max_tokens):
         api_key = load_api_key(api_key_file)
         messages = chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens)
         print(messages)
+        speak(messages)
 
 
 if __name__ == "__main__":
