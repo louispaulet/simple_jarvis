@@ -95,25 +95,38 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
             #case of comma followed by space in sentence
             elif (re.search(r'\,\s', complete_sentence)):
               # add sentence to queue
-              shared_queue.put(complete_sentence.split(',')[0])
+              shared_queue.put(complete_sentence.split(', ')[0])
               # keep next sentence for later
-              curr_sentence = [complete_sentence.split(',')[1]]
+              curr_sentence = [complete_sentence.split(', ')[1]]
               
             
             #case of period followed by space in sentence
             elif (re.search(r'\.\s', complete_sentence)):
               # add sentence to queue
-              shared_queue.put(complete_sentence.split('.')[0])
+              shared_queue.put(complete_sentence.split('. ')[0])
               # keep next sentence for later
-              curr_sentence = [complete_sentence.split('.')[1]]
+              curr_sentence = [complete_sentence.split('. ')[1]]
               
               
     return None
 
+import pygame.mixer
+from gtts import gTTS
+from langdetect import detect
+import tempfile
+import os
+
+import pygame.mixer
+from gtts import gTTS
+from langdetect import detect
+import tempfile
+import os
+import pydub
+
 def speak(text, complete_text):
     print(text)
     detected_language = detect(complete_text)
-    #print(complete_text)
+    
     tts = gTTS(text=text, lang=detected_language)
 
     # Create a temporary file to store the speech output
@@ -124,25 +137,42 @@ def speak(text, complete_text):
     # Close the temporary file before loading it into pygame
     temp_file.close()
 
-    # Play the speech output
+    # Load the sound file using pydub
+    sound = pydub.AudioSegment.from_file(temp_filename)
+
+    # Adjust the playback speed
+    speed_factor = 1.25  # Increase this value to play faster or decrease for slower playback
+    sound = sound.speedup(playback_speed=speed_factor)
+
+    # Export the modified sound to a temporary file
+    modified_temp_filename = temp_filename + "_modified.wav"
+    sound.export(modified_temp_filename, format="wav")
+
+    # Initialize Pygame mixer
     pygame.mixer.init()
-    sound = pygame.mixer.Sound(temp_filename)
-    sound.play()
-    
+
+    # Load the modified sound file
+    modified_sound = pygame.mixer.Sound(modified_temp_filename)
+
+    # Play the modified speech output
+    modified_sound.play()
+
     # Wait until the speech is finished playing
     while pygame.mixer.get_busy():
         continue
 
     # Get sound duration and return it
-    sound_duration = sound.get_length()
+    sound_duration = modified_sound.get_length()
 
     # Stop the sound
-    sound.stop()
+    modified_sound.stop()
 
-    # Delay the deletion of the temporary file until after playback
+    # Delay the deletion of the temporary files until after playback
     os.remove(temp_filename)
+    os.remove(modified_temp_filename)
 
     return sound_duration  # return the sound duration
+
 
 def speak_the_queue(shared_queue, shared_complete_text):
     while True:
@@ -159,7 +189,7 @@ def speak_the_queue(shared_queue, shared_complete_text):
             duration = speak(text, complete_text)
 
 
-            time.sleep(0.01)
+            #time.sleep(0.01)
         else:
         # some sleepy instructions to wait for stream
             time.sleep(0.01)
@@ -168,7 +198,8 @@ def main(api_key_file, model, max_tokens, shared_queue):
     r = sr.Recognizer()
     with sr.Microphone() as source:
         api_key = load_api_key(api_key_file)
-        chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
+        #chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
+        chat_with_gpt("explique moi l'histoire d'harry potter", api_key, model, max_tokens, shared_queue)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Voice-based chatbot with OpenAI')
