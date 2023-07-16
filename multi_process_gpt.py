@@ -90,8 +90,12 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
               #speak(complete_sentence)
     return None
 
-def speak(text):
-    detected_language = detect(text)
+def speak(text, complete_text):
+    print('==============================')
+    print(text)
+    print('==============================')
+    detected_language = detect(complete_text)
+    print(complete_text)
     tts = gTTS(text=text, lang=detected_language)
 
     # Create a temporary file to store the speech output
@@ -122,15 +126,23 @@ def speak(text):
 
     return sound_duration  # return the sound duration
 
-def speak_the_queue(shared_queue):
+def speak_the_queue(shared_queue, shared_complete_text):
     while True:
         if not shared_queue.empty():
             text = shared_queue.get()
-            print(f"Reading: {text}")
-            duration = speak(text)
+            if not shared_complete_text.empty():
+                complete_text = shared_complete_text.get()
+            else:
+                complete_text = text
+            
+            #update the complete text with latest sentence
+            shared_complete_text.put(complete_text+text)
+            
+            duration = speak(text, complete_text)
 
             # Sleep for the duration of the sound
-            time.sleep(duration/100)
+            #time.sleep(duration/100)
+            time.sleep(0.1)
         else:
             print('empty queue, waiting')
             time.sleep(0.1)
@@ -161,9 +173,10 @@ if __name__ == "__main__":
     
     manager = multiprocessing.Manager()
     shared_queue = manager.Queue()
+    shared_complete_text = manager.Queue()
 
     process1 = multiprocessing.Process(target=main, args=(args.api_key_file, args.model, args.max_tokens, shared_queue))
-    process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,))
+    process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,shared_complete_text))
     
     process1.start()
     process2.start()
