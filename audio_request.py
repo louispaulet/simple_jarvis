@@ -39,7 +39,7 @@ def load_api_key(file_path):
         sys.exit(1)
 
 
-def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=50, retries=3):
+def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, retries=3):
     if not prompt:
         print('Nothing to request, prompt is empty')
         return None
@@ -67,6 +67,7 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=50, retries
             # Handle the response
             if response.status_code == 200:
                 # Get the generated message from the API response
+                print(response.json())
                 messages = response.json()['choices'][0]['message']['content']
                 return messages
             else:
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Voice-based chatbot with OpenAI')
     parser.add_argument('--api-key-file', type=str, default='key.txt', help='Path to file containing OpenAI API key')
     parser.add_argument('--model', type=str, default='gpt-3.5-turbo', help='Model to use for OpenAI Chat API')
-    parser.add_argument('--max-tokens', type=int, default=50, help='Maximum number of tokens for Chat API response')
+    parser.add_argument('--max-tokens', type=int, default=500, help='Maximum number of tokens for Chat API response')
     args = parser.parse_args()
 
     main(args.api_key_file, args.model, args.max_tokens)
