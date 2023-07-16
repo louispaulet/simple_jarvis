@@ -83,32 +83,35 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
             curr_sentence.append(chunk_text)
 
             complete_sentence = ''.join(curr_sentence)
+            
             #case of a simple delimiter in current chunk
             if (('\n' in chunk_text) or (':' in chunk_text) or (';' in chunk_text)):
               
-              curr_sentence = []
+              # add sentence to queue
               shared_queue.put(complete_sentence)
+              # reset sentence
+              curr_sentence = []
               
-            #case of comma followed by space
+            #case of comma followed by space in sentence
             elif (re.search(r'\,\s', complete_sentence)):
-              
+              # add sentence to queue
               shared_queue.put(complete_sentence.split(',')[0])
+              # keep next sentence for later
               curr_sentence = [complete_sentence.split(',')[1]]
               
             
-            #case of period followed by space
+            #case of period followed by space in sentence
             elif (re.search(r'\.\s', complete_sentence)):
-              
+              # add sentence to queue
               shared_queue.put(complete_sentence.split('.')[0])
+              # keep next sentence for later
               curr_sentence = [complete_sentence.split('.')[1]]
               
               
     return None
 
 def speak(text, complete_text):
-    print('==============================')
     print(text)
-    print('==============================')
     detected_language = detect(complete_text)
     #print(complete_text)
     tts = gTTS(text=text, lang=detected_language)
@@ -155,27 +158,17 @@ def speak_the_queue(shared_queue, shared_complete_text):
             
             duration = speak(text, complete_text)
 
-            # Sleep for the duration of the sound
-            #time.sleep(duration/100)
+
             time.sleep(0.01)
         else:
-            #print('empty queue, waiting')
+        # some sleepy instructions to wait for stream
             time.sleep(0.01)
 
-
-
-
 def main(api_key_file, model, max_tokens, shared_queue):
-    #api_key = load_api_key(api_key_file)
-    #messages = chat_with_gpt("donne moi la recette de la tarte aux pommes", api_key, model, max_tokens, shared_queue)
-    #return None
     r = sr.Recognizer()
     with sr.Microphone() as source:
         api_key = load_api_key(api_key_file)
         chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
-        #print(messages)
-        #speak(messages)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Voice-based chatbot with OpenAI')
@@ -183,7 +176,6 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='gpt-3.5-turbo', help='Model to use for OpenAI Chat API')
     parser.add_argument('--max-tokens', type=int, default=500, help='Maximum number of tokens for Chat API response')
     args = parser.parse_args()
-    #print(args)
     
     
     manager = multiprocessing.Manager()
@@ -199,4 +191,3 @@ if __name__ == "__main__":
     process1.join()
     process2.join()
 
-    #main(args.api_key_file, args.model, args.max_tokens)
