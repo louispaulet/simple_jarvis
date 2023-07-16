@@ -141,7 +141,7 @@ def speak(text, complete_text):
     sound = pydub.AudioSegment.from_file(temp_filename)
 
     # Adjust the playback speed
-    speed_factor = 1.25  # Increase this value to play faster or decrease for slower playback
+    speed_factor = 1.3  # Increase this value to play faster or decrease for slower playback
     sound = sound.speedup(playback_speed=speed_factor)
 
     # Export the modified sound to a temporary file
@@ -195,11 +195,11 @@ def speak_the_queue(shared_queue, shared_complete_text):
             time.sleep(0.01)
 
 def main(api_key_file, model, max_tokens, shared_queue):
+    print('CTRL+C to exit this program.')
     r = sr.Recognizer()
     with sr.Microphone() as source:
         api_key = load_api_key(api_key_file)
-        #chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
-        chat_with_gpt("explique moi l'histoire d'harry potter", api_key, model, max_tokens, shared_queue)
+        chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Voice-based chatbot with OpenAI')
