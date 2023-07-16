@@ -1,3 +1,4 @@
+import re
 import tempfile
 import time
 import requests
@@ -81,13 +82,27 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
         if chunk_text is not None:
             curr_sentence.append(chunk_text)
 
-            if '\n' in chunk_text:
-              complete_sentence = ''.join(curr_sentence)
+            complete_sentence = ''.join(curr_sentence)
+            #case of a simple delimiter in current chunk
+            if (('\n' in chunk_text) or (':' in chunk_text) or (';' in chunk_text)):
+              
               curr_sentence = []
-              #print(complete_sentence)
               shared_queue.put(complete_sentence)
-              # problem here! - the .mp3 is being read while the next tries to be written!
-              #speak(complete_sentence)
+              
+            #case of comma followed by space
+            elif (re.search(r'\,\s', complete_sentence)):
+              
+              shared_queue.put(complete_sentence.split(',')[0])
+              curr_sentence = [complete_sentence.split(',')[1]]
+              
+            
+            #case of period followed by space
+            elif (re.search(r'\.\s', complete_sentence)):
+              
+              shared_queue.put(complete_sentence.split('.')[0])
+              curr_sentence = [complete_sentence.split('.')[1]]
+              
+              
     return None
 
 def speak(text, complete_text):
@@ -142,10 +157,10 @@ def speak_the_queue(shared_queue, shared_complete_text):
 
             # Sleep for the duration of the sound
             #time.sleep(duration/100)
-            time.sleep(0.1)
+            time.sleep(0.01)
         else:
             #print('empty queue, waiting')
-            time.sleep(0.1)
+            time.sleep(0.01)
 
 
 
