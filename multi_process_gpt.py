@@ -84,7 +84,7 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
             if '\n' in chunk_text:
               complete_sentence = ''.join(curr_sentence)
               curr_sentence = []
-              print(complete_sentence)
+              #print(complete_sentence)
               shared_queue.put(complete_sentence)
               # problem here! - the .mp3 is being read while the next tries to be written!
               #speak(complete_sentence)
@@ -95,7 +95,7 @@ def speak(text, complete_text):
     print(text)
     print('==============================')
     detected_language = detect(complete_text)
-    print(complete_text)
+    #print(complete_text)
     tts = gTTS(text=text, lang=detected_language)
 
     # Create a temporary file to store the speech output
@@ -144,22 +144,22 @@ def speak_the_queue(shared_queue, shared_complete_text):
             #time.sleep(duration/100)
             time.sleep(0.1)
         else:
-            print('empty queue, waiting')
+            #print('empty queue, waiting')
             time.sleep(0.1)
 
 
 
 
 def main(api_key_file, model, max_tokens, shared_queue):
-    api_key = load_api_key(api_key_file)
-    messages = chat_with_gpt("donne moi la recette de la tarte aux pommes", api_key, model, max_tokens, shared_queue)
-    return None
+    #api_key = load_api_key(api_key_file)
+    #messages = chat_with_gpt("donne moi la recette de la tarte aux pommes", api_key, model, max_tokens, shared_queue)
+    #return None
     r = sr.Recognizer()
     with sr.Microphone() as source:
         api_key = load_api_key(api_key_file)
-        messages = chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
-        print(messages)
-        speak(messages)
+        chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
+        #print(messages)
+        #speak(messages)
 
 
 if __name__ == "__main__":
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='gpt-3.5-turbo', help='Model to use for OpenAI Chat API')
     parser.add_argument('--max-tokens', type=int, default=500, help='Maximum number of tokens for Chat API response')
     args = parser.parse_args()
-    print(args)
+    #print(args)
     
     
     manager = multiprocessing.Manager()
