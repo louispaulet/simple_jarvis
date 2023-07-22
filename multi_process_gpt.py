@@ -6,10 +6,12 @@ import speech_recognition as sr
 import argparse
 import json
 import os
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
 import sys
 from gtts import gTTS
 from langdetect import detect
-import pygame
 import openai
 import multiprocessing
 import pygame.mixer
@@ -26,6 +28,7 @@ def get_voice_command(r, source, retries=3):
             if command.strip() == '':
                 print("La commande est vide")
                 continue
+
             return command
         except sr.UnknownValueError:
             print("Google Speech Recognition n'a pas compris ce que vous avez dit")
@@ -64,6 +67,7 @@ def get_chunk_text(text_chunk):
 def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared_queue='', shared_stop_signal=''):
     if not prompt:
         print('Nothing to request, prompt is empty')
+        shared_stop_signal.put(True)
         return None
     
     # load key into openai lib
@@ -212,17 +216,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     
-    manager = multiprocessing.Manager()
-    shared_queue = manager.Queue()
-    shared_complete_text = manager.Queue()
-    shared_stop_signal = manager.Queue()
+    while True:
+    
+        manager = multiprocessing.Manager()
+        shared_queue = manager.Queue()
+        shared_complete_text = manager.Queue()
+        shared_stop_signal = manager.Queue()
 
-    process1 = multiprocessing.Process(target=main, args=(args.api_key_file, args.model, args.max_tokens, shared_queue, shared_stop_signal))
-    process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,shared_complete_text, shared_stop_signal))
-    
-    process1.start()
-    process2.start()
-    
-    process1.join()
-    process2.join()
+        process1 = multiprocessing.Process(target=main, args=(args.api_key_file, args.model, args.max_tokens, shared_queue, shared_stop_signal))
+        process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,shared_complete_text, shared_stop_signal))
+        
+        process1.start()
+        process2.start()
+        
+        process1.join()
+        process2.join()
 
