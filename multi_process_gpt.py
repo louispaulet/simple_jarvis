@@ -9,10 +9,12 @@ import os
 import sys
 from gtts import gTTS
 from langdetect import detect
-from tempfile import TemporaryFile
 import pygame
 import openai
 import multiprocessing
+import pygame.mixer
+import pydub
+
 
 def get_voice_command(r, source, retries=3):
     for _ in range(retries):
@@ -59,12 +61,12 @@ def get_chunk_text(text_chunk):
     return None
 
 
-def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared_queue=''):
+def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared_queue='', shared_stop_signal=''):
     if not prompt:
         print('Nothing to request, prompt is empty')
         return None
     
-    
+    # load key into openai lib
     openai.api_key = api_key
     
     response = openai.ChatCompletion.create(
@@ -107,23 +109,18 @@ def chat_with_gpt(prompt, api_key, model='gpt-3.5-turbo', max_tokens=500, shared
               # keep next sentence for later
               curr_sentence = [complete_sentence.split('. ')[1]]
               
-              
+    
+    if len(curr_sentence):
+      # add sentence to queue
+      shared_queue.put(''.join(curr_sentence))
+    
+    # send stop signal
+    shared_stop_signal.put(True)
     return None
 
-import pygame.mixer
-from gtts import gTTS
-from langdetect import detect
-import tempfile
-import os
-
-import pygame.mixer
-from gtts import gTTS
-from langdetect import detect
-import tempfile
-import os
-import pydub
-
 def speak(text, complete_text):
+    
+    # this print must be kept
     print(text)
     detected_language = detect(complete_text)
     
@@ -174,7 +171,7 @@ def speak(text, complete_text):
     return sound_duration  # return the sound duration
 
 
-def speak_the_queue(shared_queue, shared_complete_text):
+def speak_the_queue(shared_queue, shared_complete_text, shared_stop_signal):
     while True:
         if not shared_queue.empty():
             text = shared_queue.get()
@@ -192,14 +189,20 @@ def speak_the_queue(shared_queue, shared_complete_text):
             #time.sleep(0.01)
         else:
         # some sleepy instructions to wait for stream
+            
+            if not shared_complete_text.empty():
+                if (shared_stop_signal.get()):
+                    print('stopping listener')
+                    return None
             time.sleep(0.01)
+            
 
-def main(api_key_file, model, max_tokens, shared_queue):
+def main(api_key_file, model, max_tokens, shared_queue, shared_stop_signal):
     print('CTRL+C to exit this program.')
     r = sr.Recognizer()
     with sr.Microphone() as source:
         api_key = load_api_key(api_key_file)
-        chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue)
+        chat_with_gpt(get_voice_command(r, source), api_key, model, max_tokens, shared_queue, shared_stop_signal)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Voice-based chatbot with OpenAI')
@@ -212,9 +215,10 @@ if __name__ == "__main__":
     manager = multiprocessing.Manager()
     shared_queue = manager.Queue()
     shared_complete_text = manager.Queue()
+    shared_stop_signal = manager.Queue()
 
-    process1 = multiprocessing.Process(target=main, args=(args.api_key_file, args.model, args.max_tokens, shared_queue))
-    process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,shared_complete_text))
+    process1 = multiprocessing.Process(target=main, args=(args.api_key_file, args.model, args.max_tokens, shared_queue, shared_stop_signal))
+    process2 = multiprocessing.Process(target=speak_the_queue, args=(shared_queue,shared_complete_text, shared_stop_signal))
     
     process1.start()
     process2.start()
