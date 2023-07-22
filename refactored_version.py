@@ -18,8 +18,9 @@ from langdetect import detect
 
 
 class ChatBot:
-    def __init__(self, api_key_file, model='gpt-3.5-turbo', max_tokens=500):
+    def __init__(self, api_key_file, lang, model='gpt-3.5-turbo', max_tokens=500):
         self.api_key = self.load_api_key(api_key_file)
+        self.lang = lang
         self.model = model
         self.max_tokens = max_tokens
         self.recognizer = sr.Recognizer()
@@ -37,7 +38,7 @@ class ChatBot:
             print("Speak now:")
             audio = self.recognizer.listen(source)
             try:
-                command = self.recognizer.recognize_google(audio, language='fr-FR')
+                command = self.recognizer.recognize_google(audio, language=self.lang)
                 print(f"Command received: {command}")
                 if command.strip() == '':
                     print("The command is empty")
@@ -161,8 +162,8 @@ class ChatBot:
         shared_complete_text.put(complete_text)
 
 
-def main(api_key_file):
-    chatbot = ChatBot(api_key_file)
+def main(api_key_file, lang):
+    chatbot = ChatBot(api_key_file, lang)
 
     with sr.Microphone() as source:
         voice_command = chatbot.get_voice_command(source)
@@ -187,7 +188,8 @@ def main(api_key_file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Communicate with the GPT-3 model using voice commands.')
     parser.add_argument('--api_key_file', default='key.txt', type=str, required=False, help='Path to the file containing the OpenAI API key.')
+    parser.add_argument('--lang', default='fr-FR', type=str, required=False, help='Language for audio detection and text response')
     args = parser.parse_args()
 
-    main(args.api_key_file)
+    main(args.api_key_file, args.lang)
 
