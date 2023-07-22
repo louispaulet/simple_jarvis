@@ -165,24 +165,30 @@ class ChatBot:
 def main(api_key_file, lang):
     chatbot = ChatBot(api_key_file, lang)
 
-    with sr.Microphone() as source:
-        voice_command = chatbot.get_voice_command(source)
+    while True:
+        with sr.Microphone() as source:
+            voice_command = chatbot.get_voice_command(source)
 
-    shared_queue = multiprocessing.Queue()
-    shared_stop_signal = multiprocessing.Queue()
-    shared_complete_text = multiprocessing.Queue()
+        shared_queue = multiprocessing.Queue()
+        shared_stop_signal = multiprocessing.Queue()
+        shared_complete_text = multiprocessing.Queue()
 
-    communicate_process = multiprocessing.Process(target=chatbot.communicate_with_gpt, args=(voice_command, shared_queue, shared_stop_signal))
-    speak_process = multiprocessing.Process(target=chatbot.speak_responses, args=(shared_queue, shared_complete_text, shared_stop_signal))
+        communicate_process = multiprocessing.Process(target=chatbot.communicate_with_gpt, args=(voice_command, shared_queue, shared_stop_signal))
+        speak_process = multiprocessing.Process(target=chatbot.speak_responses, args=(shared_queue, shared_complete_text, shared_stop_signal))
 
-    communicate_process.start()
-    speak_process.start()
+        communicate_process.start()
+        speak_process.start()
 
-    communicate_process.join()
-    speak_process.join()
+        communicate_process.join()
+        speak_process.join()
 
-    complete_text = shared_complete_text.get()
-    print(f"Complete text: {complete_text}")
+        complete_text = shared_complete_text.get()
+        print(f"Complete text: {complete_text}")
+        
+        # Ask the user if they want to continue
+        user_input = input("Do you want to continue? (yes/no): ")
+        if user_input.lower() not in ['yes', 'y']:
+            break
 
 
 if __name__ == "__main__":
