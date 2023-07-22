@@ -6,7 +6,6 @@ import speech_recognition as sr
 import argparse
 import json
 import os
-import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import sys
