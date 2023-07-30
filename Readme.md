@@ -13,10 +13,14 @@ The main script is easy to use and customizable, with options for setting the Op
     cd simple_jarvis
     ```
 
-2. Install the necessary Python libraries:
+2. Install the necessary Python libraries via conda:
 
     ```
-    pip install -r requirements.txt
+    conda create -n simple_jarvis --file requirements.txt
+    ```
+    
+    ```
+    conda activate simple_jarvis
     ```
 
 3. Obtain an API key from OpenAI and save it in a file. By default, the script looks for the key in 'key.txt':
